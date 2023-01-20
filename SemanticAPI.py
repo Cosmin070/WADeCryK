@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request, abort
 
-from Cryptocurrency import Cryptocurrency
+from models.Cryptocurrency import Cryptocurrency
 
 app = Flask(__name__)
 

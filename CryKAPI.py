@@ -1,16 +1,13 @@
 from authlib.integrations.flask_client import OAuth
-from flask import Flask, jsonify, request, send_file, url_for, session, redirect
+from flask import Flask, jsonify, request, send_file, url_for, session, redirect, make_response
 
-# from CryKDatabase import __get_database
-from Cryptocurrency import Cryptocurrency
-
-# db = __get_database()
-# print(db)
+from CryKDatabase import insert_user
+from models.Cryptocurrency import Cryptocurrency
+from models.users import User
 
 app = Flask(__name__)
 app.secret_key = '!secret'
 app.config.from_object('config')
-
 
 CONF_URL = 'https://accounts.google.com/.well-known/openid-configuration'
 oauth = OAuth(app)
@@ -21,6 +18,7 @@ oauth.register(
         'scope': 'openid email profile'
     }
 )
+
 
 @app.route('/cryk/api/getImage/<string:name>')
 def get_cryptocurrency_image(name):
@@ -45,15 +43,20 @@ def login():
 @app.route('/cryk/auth')
 def auth():
     token = oauth.google.authorize_access_token()
+    email = token['userinfo']['email']
+    user = User(email=email)
+    id = insert_user(user)
     session['user'] = token['userinfo']
-    return redirect('/')
+    session['id'] = id
+    return redirect("/")
 
 
 @app.route('/logout')
 def logout():
-    session.pop('user', None)
+    print(session.get('id'))
+    session.pop('id', None)
     return redirect('/')
 
 
 if __name__ == '__main__':
-    app.run(port=5002)
+    app.run(port=5000)
