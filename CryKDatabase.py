@@ -1,3 +1,4 @@
+import pymongo
 from bson import json_util
 from flask import json
 from pymongo import MongoClient
@@ -20,14 +21,20 @@ def get_users_collection():
 
 def insert_user(user: User):
     users = get_users_collection()
-    id = find_id(user.email)
+    id = find_id_by_email(user.email)
     if id == -1:
         users.insert_one(json.loads(user.__str__()))
-        return find_id(user.email)
+        return find_id_by_email(user.email)
     return id
 
 
-def find_id(email):
+def find_id_by_email(email):
     users = get_users_collection()
     user = users.find_one({"email": email})
+    return json.loads(json_util.dumps(user.get('_id'))) if user is not None else -1
+
+
+def find_account(user: User):
+    users = get_users_collection()
+    user = users.find_one({"email": user.email, "password": user.password})
     return json.loads(json_util.dumps(user.get('_id'))) if user is not None else -1
