@@ -1,3 +1,4 @@
+import base64
 import os
 
 image_dict = {
@@ -2817,3 +2818,10 @@ def get_image(name):
         image_path = os.path.join(os.getcwd(), f"images\{name[0].upper()}\{image_dict[name]}")
         return image_path if os.path.isfile(image_path) else -1
     return -1
+
+
+def get_response_image(image_path):
+    image = open(image_path, 'rb').read()
+    base64_encoded = base64.b64encode(image)
+    dataurl = f'{base64_encoded}'
+    return dataurl
