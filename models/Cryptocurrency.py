@@ -11,6 +11,7 @@ class Cryptocurrency:
     date_founded: str
     incept: str
     proof_of_work: str
+    proof_of_stake: str
     premine: int
     protection_scheme: str
     protocol: str
@@ -27,6 +28,7 @@ class Cryptocurrency:
                  date_founded="",
                  incept="",
                  proof_of_work="",
+                 proof_of_stake="",
                  premine=0,
                  protection_scheme="",
                  protocol="",
@@ -44,6 +46,7 @@ class Cryptocurrency:
         self.protection_scheme = protection_scheme
         self.premine = premine
         self.proof_of_work = proof_of_work
+        self.proof_of_stake = proof_of_stake
         self.incept = incept
         self.date_founded = date_founded
         self.block_time = block_time
@@ -52,4 +55,4 @@ class Cryptocurrency:
         self.crypto_id = crypto_id
 
     def __str__(self) -> str:
-        return json.dumps(asdict(self), indent=4)
+        return json.dumps(asdict(self), indent=4, default=str)

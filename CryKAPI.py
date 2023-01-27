@@ -26,13 +26,6 @@ oauth.register(
 )
 
 
-@app.route('/cryk/api/getImage/<string:name>')
-def get_cryptocurrency_image(name):
-    if (get_image(name)) == -1:
-        return Response(status=404)
-    return send_file(get_image(name), mimetype='image/png')
-
-
 @app.route('/cryk/api/getImages', methods=['POST'])
 def get_crypto_image():
     image_paths = []

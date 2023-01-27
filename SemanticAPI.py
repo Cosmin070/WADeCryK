@@ -1,27 +1,17 @@
 from flask import Flask, jsonify, request, abort
 
+from images import image_dict
 from models.Cryptocurrency import Cryptocurrency
+from ontology import get_cryptocurrencies_by_protocol_from_ontology, get_cryptocurrency_details_from_ontology
 
 app = Flask(__name__)
 
 
 @app.route('/ontology/api/cryptocurrencies')
 def get_all_cryptocurrencies():
-    item = Cryptocurrency()
-    item_list = [item]
-    return jsonify(item_list)
-
-
-@app.route('/ontology/api/cryptocurrenciesById', methods=["POST"])
-def get_cryptocurrencies_by_id():
-    ids = None
-    payload = request.json
-    if "ids" in payload:
-        ids = payload["ids"]
-    print(ids)
-    item = Cryptocurrency(crypto_id=ids[0])
-    item_list = [item]
-    return jsonify(item_list)
+    cryptocurrencies = get_cryptocurrencies_by_protocol_from_ontology("pos")
+    cryptocurrencies.append(get_cryptocurrencies_by_protocol_from_ontology("pow"))
+    return jsonify(cryptocurrencies)
 
 
 @app.route('/ontology/api/cryptocurrenciesByYears', methods=["POST"])
@@ -39,20 +29,20 @@ def get_cryptocurrencies_by_year():
     return jsonify(item_list)
 
 
-@app.route('/ontology/api/cryptocurrencies/<int:id>')
-def get_cryptocurrency_by_id(_id):
-    item = Cryptocurrency(crypto_id=_id)
-    item_list = [item]
-    return jsonify(item_list)
-
-
 @app.route('/ontology/api/<string:protocol>/cryptocurrencies')
-def get_cryptocurrency_by_protocol(protocol):
+def get_cryptocurrencies_by_protocol(protocol):
     if protocol not in ["pos", "pow"]:
         abort(400)
-    item = Cryptocurrency(protocol=protocol)
-    item_list = [item]
-    return jsonify(item_list)
+    if protocol == "pos":
+        return jsonify(get_cryptocurrencies_by_protocol_from_ontology("pos"))
+    return jsonify(get_cryptocurrencies_by_protocol_from_ontology("pow"))
+
+
+@app.route('/ontology/api/cryptocurrencyByName/<string:identifier>')
+def get_cryptocurrency_details(identifier):
+    if identifier not in image_dict:
+        abort(400)
+    return jsonify(get_cryptocurrency_details_from_ontology(identifier))
 
 
 if __name__ == '__main__':
