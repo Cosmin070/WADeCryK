@@ -3,6 +3,7 @@ from flask import Flask, jsonify, request, send_file, url_for, session, Response
 from google.auth.exceptions import MalformedError
 from google.auth.transport import requests
 from google.oauth2 import id_token
+from flask_cors import CORS
 
 from CryKDatabase import insert_user, find_account
 from config import GOOGLE_CLIENT_ID
@@ -12,6 +13,7 @@ from models.Cryptocurrency import Cryptocurrency
 from models.users import User
 
 app = Flask(__name__)
+CORS(app)
 app.secret_key = '!secret'
 app.config.from_object('config')
 
