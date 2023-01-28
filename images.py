@@ -2822,6 +2822,6 @@ def get_image(name):
 
 def get_response_image(image_path):
     image = open(image_path, 'rb').read()
-    base64_encoded = base64.b64encode(image)
+    base64_encoded = base64.b64encode(image).decode('utf8')
     dataurl = f'{base64_encoded}'
     return dataurl
