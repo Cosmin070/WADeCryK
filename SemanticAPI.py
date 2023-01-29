@@ -9,6 +9,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
+
 @app.route('/ontology/api/cryptocurrencies')
 def get_all_cryptocurrencies():
     cryptocurrencies = get_cryptocurrencies_by_protocol_from_ontology("pos")

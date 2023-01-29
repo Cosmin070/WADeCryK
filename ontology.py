@@ -22,8 +22,8 @@ def get_cryptocurrencies_by_protocol_from_ontology(consensus):
             PREFIX doacc: <http://purl.org/net/bel-epa/doacc#>
 
             SELECT ?name ?description ?block_time ?date_founded ?incept
-                ?consensus ?premine ?protection_scheme
-                ?source ?protocol ?symbol ?total_coins ?website
+                ?consensus ?protection_scheme
+                ?source ?protocol ?symbol ?total_coins ?website ?premine
             WHERE {{
                 ?x skos:prefLabel ?name .
                 ?x dc:description ?description .
