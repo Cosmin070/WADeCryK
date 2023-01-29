@@ -117,7 +117,8 @@ def logout():
 def login():
     response = Response()
     payload = request.json
-    print(payload)
+    if 'email' not in payload or 'password' not in payload:
+        abort(400)
     email = payload['email']
     password = payload['password']
     user = User(email=email, password=password)
