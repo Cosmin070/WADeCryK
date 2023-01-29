@@ -2,11 +2,11 @@ from flask import Flask, jsonify, request, abort
 
 from images import image_dict
 from models.Cryptocurrency import Cryptocurrency
-from ontology import get_cryptocurrencies_by_protocol_from_ontology, get_cryptocurrency_details_from_ontology, \
-    get_cryptocurrencies_details_from_ontology, perform_query_on_ontology
+from ontology import get_cryptocurrencies_by_protocol_from_ontology, get_cryptocurrency_details_from_ontology
+from flask_cors import CORS
 
 app = Flask(__name__)
-
+CORS(app)
 
 @app.route('/ontology/api/cryptocurrencies')
 def get_all_cryptocurrencies():
@@ -44,21 +44,6 @@ def get_cryptocurrency_details(identifier):
     if identifier not in image_dict:
         abort(400)
     return jsonify(get_cryptocurrency_details_from_ontology(identifier))
-
-
-@app.route('/ontology/api/cryptocurrenciesByName', methods=['POST'])
-def get_cryptocurrencies_details():
-    if 'coins' not in request.json or any([False if coin in image_dict else True for coin in request.json['coins']]):
-        abort(400)
-    return jsonify(get_cryptocurrencies_details_from_ontology(request.json['coins']))
-
-
-@app.route('/ontology/api/runQuery', methods=['POST'])
-def run_query():
-    print(request.json)
-    if 'query' not in request.json:
-        abort(400)
-    return jsonify(perform_query_on_ontology(request.json['query']))
 
 
 if __name__ == '__main__':

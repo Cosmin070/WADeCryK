@@ -3,6 +3,7 @@ from flask import Flask, jsonify, request, session, Response, json, abort
 from google.auth.exceptions import MalformedError, InvalidValue
 from google.auth.transport import requests
 from google.oauth2 import id_token
+from flask_cors import CORS
 
 import CryKDatabase
 from config import GOOGLE_CLIENT_ID
@@ -14,6 +15,7 @@ from models.Profile import Profile
 from models.users import User
 
 app = Flask(__name__)
+CORS(app)
 app.secret_key = '!secret'
 app.config.from_object('config')
 
@@ -29,6 +31,13 @@ oauth.register(
 
 
 # <editor-fold desc="images routes">
+@app.route('/cryk/api/getImage/<string:name>')
+def get_cryptocurrency_image(name):
+    if (get_image(name)) == -1:
+        return Response(status=404)
+    return get_response_image(get_image(name))
+
+
 @app.route('/cryk/api/getImages', methods=['POST'])
 def get_crypto_image():
     if not check_user_session():
