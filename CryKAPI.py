@@ -1,9 +1,9 @@
 from authlib.integrations.flask_client import OAuth
 from flask import Flask, jsonify, request, session, Response, json, abort
+from flask_cors import CORS
 from google.auth.exceptions import MalformedError, InvalidValue
 from google.auth.transport import requests
 from google.oauth2 import id_token
-from flask_cors import CORS
 
 import CryKDatabase
 from config import GOOGLE_CLIENT_ID
@@ -100,14 +100,15 @@ def auth():
     session['id'] = id
     response.status = 200
     response.set_cookie("id", id['$oid'])
-    response.data = json.dumps(id)
+    response.data = json.dumps({
+        "id": id['$oid'],
+        "token": token
+    })
     return response
 
 
 @app.route('/cryk/api/logout', methods=['GET'])
 def logout():
-    session.pop('user', None)
-    session.pop('id', None)
     resp = Response()
     resp.set_cookie('id', '', expires=0)
     return resp
@@ -151,49 +152,51 @@ def register():
 def insert_user_portfolio():
     if not check_user_session():
         abort(401)
-    if 'coins' not in request.json or any([False if coin in image_dict else True for coin in request.json['coins']]):
+    if 'id' not in request.json or 'coins' not in request.json \
+            or any([False if coin in image_dict else True for coin in request.json['coins']]):
         abort(400)
-    portfolio = Portfolio(user_id=session['id']['$oid'], coins=request.json['coins'])
+    portfolio = Portfolio(user_id=request.json['id'], coins=request.json['coins'])
     CryKDatabase.insert_user_portfolio(portfolio)
     return jsonify(200)
 
 
-@app.route('/cryk/api/getPortfolio')
-def get_user_portfolio():
+@app.route('/cryk/api/getPortfolio/<string:user_id>')
+def get_user_portfolio(user_id):
     if not check_user_session():
         abort(401)
-    portfolio = CryKDatabase.get_user_portfolio(session['id']['$oid'])
+    portfolio = CryKDatabase.get_user_portfolio(user_id)
     return jsonify(portfolio)
 
 
 # </editor-fold>
 
 # <editor-fold desc="profile routes">
-@app.route('/cryk/api/getProfile')
-def get_user_profile():
+@app.route('/cryk/api/getProfile/<string:user_id>')
+def get_user_profile(user_id):
     if not check_user_session():
         abort(401)
-    return jsonify(CryKDatabase.get_user_profile(session['id']['$oid']))
+    return jsonify(CryKDatabase.get_user_profile(user_id))
 
 
 @app.route('/cryk/api/insertProfile', methods=['POST'])
 def insert_user_profile():
     if not check_user_session():
         abort(401)
-    if 'firstname' not in request.json or 'lastname' not in request.json or 'email' not in request.json:
+    if 'firstname' not in request.json or 'lastname' not in request.json \
+            or 'email' not in request.json or 'id' not in request.json:
         abort(400)
-    profile = Profile(firstname=request.json['firstname'],
+    profile = Profile(user_id=request.json['id'],
+                      firstname=request.json['firstname'],
                       lastname=request.json['lastname'],
                       email=request.json['email'],
                       city=request.json['city'] if 'city' in request.json else "",
                       country=request.json['country'] if 'country' in request.json else "",
                       address=request.json['address'] if 'address' in request.json else "",
                       about=request.json['about'] if 'about' in request.json else "",
-                      user_id=session['id']['$oid']
                       )
     if 'coins' in request.json and any([False if coin in image_dict else True for coin in request.json['coins']]):
         abort(400)
-    portfolio = Portfolio(user_id=session['id']['$oid'],
+    portfolio = Portfolio(user_id=request.json['id'],
                           coins=request.json['coins'] if 'coins' in request.json else {})
     CryKDatabase.insert_user_profile(profile)
     CryKDatabase.insert_user_portfolio(portfolio)
@@ -202,14 +205,14 @@ def insert_user_profile():
 
 # </editor-fold>
 def check_user_session():
-    if 'user' in session:
+    if 'token' in request.headers:
         try:
-            id_token.verify_oauth2_token(session['user'], requests.Request(), GOOGLE_CLIENT_ID)
+            id_token.verify_oauth2_token(request.headers['token'], requests.Request(), GOOGLE_CLIENT_ID)
         except MalformedError:
             return False
         return True
     elif 'id' in session:
-        if not CryKDatabase.is_user_in_database(session['id']['$oid']):
+        if not CryKDatabase.is_user_in_database(request.headers['id']):
             return False
         return True
     return False
