@@ -122,6 +122,8 @@ def login():
     password = payload['password']
     user = User(email=email, password=password)
     id = CryKDatabase.find_account(user)
+    if id == -1:
+        return abort(401)
     session['id'] = id
     response.set_cookie("id", id['$oid'])
     response.data = json.dumps(id)
