@@ -4,6 +4,7 @@ from flask_cors import CORS
 from google.auth.exceptions import MalformedError, InvalidValue
 from google.auth.transport import requests
 from google.oauth2 import id_token
+from coin_thirdparty_tool import get_custom_rate_now, get_last_days_exchange
 
 import CryKDatabase
 from config import GOOGLE_CLIENT_ID
@@ -204,6 +205,32 @@ def insert_user_profile():
 
 
 # </editor-fold>
+
+
+# <editor-fold desc="coins routes">
+@app.route('/cryk/api/getCurrentPriceForCoin/<string:coin>', methods=['GET'])
+def get_current_price_for_coin(coin: str):
+    # if not check_user_session():
+    #     abort(401)
+    result = get_custom_rate_now(coin)
+    return jsonify(result) if result != -1 else abort(400)
+
+
+@app.route('/cryk/api/getHistoricalPriceForCoin', methods=['GET'])
+def get_historical_prices_for_coin():
+    # if not check_user_session():
+    #     abort(401)
+    coin = request.args.get('coin', None)
+    days = request.args.get('days', None)
+    if coin is None or days is None or not days.isdigit() or int(days) > 5:
+        abort(400)
+    result = get_last_days_exchange(coin, int(days))
+    return jsonify(result) if result != -1 else abort(400)
+
+
+# </editor-fold>
+
+
 def check_user_session():
     if 'token' in request.headers:
         try:
