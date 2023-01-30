@@ -1,9 +1,9 @@
 from authlib.integrations.flask_client import OAuth
 from flask import Flask, jsonify, request, session, Response, json, abort
+from flask_cors import CORS
 from google.auth.exceptions import MalformedError, InvalidValue
 from google.auth.transport import requests
 from google.oauth2 import id_token
-from flask_cors import CORS
 
 import CryKDatabase
 from config import GOOGLE_CLIENT_ID
