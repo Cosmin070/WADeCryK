@@ -122,11 +122,6 @@ coins = [
         'name': 'CloudCoin'
     },
     {
-        'id': 'coin',
-        'symbol': 'coin',
-        'name': 'Coin'
-    },
-    {
         'id': 'corgicoin',
         'symbol': 'corgi',
         'name': 'CorgiCoin'
