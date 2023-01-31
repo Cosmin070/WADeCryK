@@ -44,5 +44,3 @@ def get_last_days_exchange(coin: str, days: int):
         })
     print(response)
     return response
-
-get_last_days_exchange("bitcoin", 5)
