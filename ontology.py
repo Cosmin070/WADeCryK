@@ -222,7 +222,37 @@ def get_cryptocurrencies_details_from_ontology(coin_names):
                 }}
         """
     )
-    return json.loads(result.serialize(format='json'))
+    cryptocurrencies = []
+    for cryptocurrency in result:
+        cryptocurrencies.append(Cryptocurrency(name=cryptocurrency[0].toPython(),
+                                               description=cryptocurrency[1].toPython()
+                                               if cryptocurrency[1] is not None else "",
+                                               block_time=cryptocurrency[2].toPython()
+                                               if cryptocurrency[2] is not None else "",
+                                               date_founded=cryptocurrency[3].toPython()
+                                               if cryptocurrency[3] is not None else "",
+                                               incept=cryptocurrency[4].toPython()
+                                               if cryptocurrency[4] is not None else "",
+                                               protection_scheme=cryptocurrency[5].toPython()
+                                               if cryptocurrency[5] is not None else "",
+                                               source=cryptocurrency[6].toPython()
+                                               if cryptocurrency[6] is not None else "",
+                                               protocol=cryptocurrency[7].toPython()
+                                               if cryptocurrency[7] is not None else "",
+                                               symbol=cryptocurrency[8].toPython()
+                                               if cryptocurrency[8] is not None else "",
+                                               total_coins=cryptocurrency[9].toPython()
+                                               if cryptocurrency[9] is not None else "",
+                                               website=cryptocurrency[10].toPython()
+                                               if cryptocurrency[10] is not None else "",
+                                               proof_of_stake=cryptocurrency[11].toPython()
+                                               if cryptocurrency[11] is not None else "",
+                                               proof_of_work=cryptocurrency[12].toPython()
+                                               if cryptocurrency[12] is not None else "",
+                                               premine=cryptocurrency[13].toPython()
+                                               if cryptocurrency[13] is not None else "",
+                                               ))
+    return cryptocurrencies
 
 
 def perform_query_on_ontology(query):
