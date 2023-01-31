@@ -4,9 +4,9 @@ from flask_cors import CORS
 from google.auth.exceptions import MalformedError, InvalidValue
 from google.auth.transport import requests
 from google.oauth2 import id_token
-from coin_thirdparty_tool import get_custom_rate_now, get_last_days_exchange
 
 import CryKDatabase
+from coin_thirdparty_tool import get_custom_rate_now, get_last_days_exchange
 from config import GOOGLE_CLIENT_ID
 from emailer import send_register_mail
 from images import get_image, image_dict, get_response_image
@@ -65,7 +65,7 @@ def get_crypto_dictionary():
 # </editor-fold>
 
 
-@app.route('/cryk/api/getVisualiaztionData', methods=['POST'])
+@app.route('/cryk/api/getVisualizationData', methods=['POST'])
 def get_visualization_data():
     payload = request.json
     filters = payload["filters"]
@@ -169,6 +169,23 @@ def get_user_portfolio(user_id):
     return jsonify(portfolio)
 
 
+@app.route('/cryk/api/updatePortfolio/<string:user_id>', methods=['PUT'])
+def update_user_portfolio(user_id):
+    if 'coins' not in request.json \
+            or any([False if coin in image_dict else True for coin in request.json['coins']]):
+        abort(400)
+    portfolio = Portfolio(user_id=user_id, coins=request.json['coins'])
+    CryKDatabase.insert_user_portfolio(portfolio)
+    return jsonify(portfolio)
+
+
+@app.route('/cryk/api/deletePortfolio/<string:user_id>', methods=['DELETE'])
+def delete_user_portfolio(user_id):
+    portfolio = Portfolio(user_id=user_id)
+    deleted_portfolio = CryKDatabase.delete_user_portfolio(portfolio)
+    return jsonify(200) if deleted_portfolio else jsonify(400)
+
+
 # </editor-fold>
 
 # <editor-fold desc="profile routes">
@@ -202,6 +219,54 @@ def insert_user_profile():
     CryKDatabase.insert_user_profile(profile)
     CryKDatabase.insert_user_portfolio(portfolio)
     return jsonify(200)
+
+
+@app.route('/cryk/api/updateProfile/<string:user_id>', methods=['PUT'])
+def update_user_profile(user_id):
+    if 'firstname' not in request.json or 'lastname' not in request.json \
+            or 'email' not in request.json or 'id' not in request.json:
+        abort(400)
+    profile = Profile(user_id=user_id,
+                      firstname=request.json['firstname'],
+                      lastname=request.json['lastname'],
+                      email=request.json['email'],
+                      city=request.json['city'] if 'city' in request.json else "",
+                      country=request.json['country'] if 'country' in request.json else "",
+                      address=request.json['address'] if 'address' in request.json else "",
+                      about=request.json['about'] if 'about' in request.json else "",
+                      )
+    if 'coins' in request.json and any([False if coin in image_dict else True for coin in request.json['coins']]):
+        abort(400)
+    portfolio = Portfolio(user_id=user_id,
+                          coins=request.json['coins'] if 'coins' in request.json else {})
+    CryKDatabase.insert_user_profile(profile)
+    CryKDatabase.insert_user_portfolio(portfolio)
+    return jsonify(200)
+
+
+@app.route('/cryk/api/deleteProfile/<string:user_id>', methods=['DELETE'])
+def delete_user_profile(user_id):
+    if 'firstname' not in request.json or 'lastname' not in request.json \
+            or 'email' not in request.json or 'id' not in request.json:
+        abort(400)
+    profile = Profile(user_id=user_id,
+                      firstname=request.json['firstname'],
+                      lastname=request.json['lastname'],
+                      email=request.json['email'],
+                      city=request.json['city'] if 'city' in request.json else "",
+                      country=request.json['country'] if 'country' in request.json else "",
+                      address=request.json['address'] if 'address' in request.json else "",
+                      about=request.json['about'] if 'about' in request.json else "",
+                      )
+    if 'coins' in request.json and any([False if coin in image_dict else True for coin in request.json['coins']]):
+        abort(400)
+    portfolio = Portfolio(user_id=user_id,
+                          coins=request.json['coins'] if 'coins' in request.json else {})
+    deleted_profile = CryKDatabase.delete_user_profile(profile)
+    deleted_portfolio = CryKDatabase.delete_user_portfolio(portfolio)
+    if deleted_portfolio and deleted_profile:
+        return jsonify(200)
+    return jsonify(400)
 
 
 # </editor-fold>
