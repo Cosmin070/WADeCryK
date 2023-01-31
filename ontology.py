@@ -1,15 +1,14 @@
-import io
 import json
 from typing import Dict, Any
 
-import rdflib
+from rdflib import Graph
 from rdflib import URIRef, Literal, BNode
-from rdflib.plugins.sparql.results.jsonresults import JSONResultSerializer
 from rdflib.query import ResultException
 
 from models.Cryptocurrency import Cryptocurrency
+from utils.compute_useful_coins import coins
 
-g = rdflib.Graph()
+g = Graph()
 g.parse("utils/cryptocurrency.jsonld")
 
 
@@ -83,18 +82,35 @@ def get_cryptocurrency_details_from_ontology(identifier):
                     ?pos ?pow ?premine
                 WHERE {{
                     ?x skos:prefLabel ?name .
-                    ?x dc:description ?description .
-                    ?x doacc:block-time ?block_time .
-                    ?x doacc:date-founded ?date_founded .
-                    ?x doacc:incept ?incept .
-                    ?x doacc:protection-scheme ?protection_scheme .   
-                    ?x doacc:source ?source .
-                    ?x doacc:protocol ?protocol .   
-                    ?x doacc:symbol ?symbol .
-                    ?x doacc:total-coins ?total_coins .
-                    
                     OPTIONAL {{
-                    ?x doacc:website ?website .
+                        ?x dc:description ?description .
+                    }}
+                    OPTIONAL {{
+                        ?x doacc:block-time ?block_time .
+                    }}
+                    OPTIONAL {{
+                        ?x doacc:date-founded ?date_founded .
+                    }}
+                    OPTIONAL {{
+                        ?x doacc:incept ?incept .
+                    }}
+                    OPTIONAL {{
+                        ?x doacc:protection-scheme ?protection_scheme .  
+                    }} 
+                    OPTIONAL {{
+                        ?x doacc:source ?source .
+                    }}
+                    OPTIONAL {{
+                        ?x doacc:protocol ?protocol .
+                    }}
+                    OPTIONAL {{
+                        ?x doacc:symbol ?symbol .
+                    }}
+                    OPTIONAL{{
+                        ?x doacc:total-coins ?total_coins .
+                    }}
+                    OPTIONAL {{
+                        ?x doacc:website ?website .
                     }}
                     OPTIONAL{{
                         ?x doacc:pos ?pos .
@@ -113,15 +129,24 @@ def get_cryptocurrency_details_from_ontology(identifier):
     cryptocurrencies = []
     for cryptocurrency in result:
         cryptocurrencies.append(Cryptocurrency(name=cryptocurrency[0].toPython(),
-                                               description=cryptocurrency[1].toPython(),
-                                               block_time=cryptocurrency[2].toPython(),
-                                               date_founded=cryptocurrency[3].toPython(),
-                                               incept=cryptocurrency[4].toPython(),
-                                               protection_scheme=cryptocurrency[5].toPython(),
-                                               source=cryptocurrency[6].toPython(),
-                                               protocol=cryptocurrency[7].toPython(),
-                                               symbol=cryptocurrency[8].toPython(),
-                                               total_coins=cryptocurrency[9].toPython(),
+                                               description=cryptocurrency[1].toPython()
+                                               if cryptocurrency[1] is not None else "",
+                                               block_time=cryptocurrency[2].toPython()
+                                               if cryptocurrency[2] is not None else "",
+                                               date_founded=cryptocurrency[3].toPython()
+                                               if cryptocurrency[3] is not None else "",
+                                               incept=cryptocurrency[4].toPython()
+                                               if cryptocurrency[4] is not None else "",
+                                               protection_scheme=cryptocurrency[5].toPython()
+                                               if cryptocurrency[5] is not None else "",
+                                               source=cryptocurrency[6].toPython()
+                                               if cryptocurrency[6] is not None else "",
+                                               protocol=cryptocurrency[7].toPython()
+                                               if cryptocurrency[7] is not None else "",
+                                               symbol=cryptocurrency[8].toPython()
+                                               if cryptocurrency[8] is not None else "",
+                                               total_coins=cryptocurrency[9].toPython()
+                                               if cryptocurrency[9] is not None else "",
                                                website=cryptocurrency[10].toPython()
                                                if cryptocurrency[10] is not None else "",
                                                proof_of_stake=cryptocurrency[11].toPython()
@@ -134,7 +159,10 @@ def get_cryptocurrency_details_from_ontology(identifier):
     return cryptocurrencies
 
 
-def get_cryptocurrencies_details_from_ontology(coins):
+def get_cryptocurrencies_details_from_ontology(coin_names):
+    coin_names = [coin.lower() for coin in coin_names]
+    filtered_coins = [coin for coin in coins if coin['name'].lower() in coin_names]
+    symbols = [coin["symbol"] for coin in filtered_coins]
     result = g.query(
         f"""
                 PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
@@ -142,23 +170,41 @@ def get_cryptocurrencies_details_from_ontology(coins):
                 PREFIX dc: <http://purl.org/dc/elements/1.1/>
                 PREFIX doacc: <http://purl.org/net/bel-epa/doacc#>
 
-                SELECT ?name ?description ?block_time ?date_founded ?incept
+                SELECT 
+                    ?id ?name ?description ?block_time ?date_founded ?incept
                     ?protection_scheme
-                    ?source ?protocol ?symbol ?total_coins ?website 
+                    ?source ?protocol ?symbol ?total_coins ?website
                     ?pos ?pow ?premine
-                WHERE {{
+                WHERE {{ 
                     ?x skos:prefLabel ?name .
-                    ?x dc:description ?description .
-                    ?x doacc:block-time ?block_time .
-                    ?x doacc:date-founded ?date_founded .
-                    ?x doacc:incept ?incept .
-                    ?x doacc:protection-scheme ?protection_scheme .   
-                    ?x doacc:source ?source .
-                    ?x doacc:protocol ?protocol .   
-                    ?x doacc:symbol ?symbol .
-                    ?x doacc:total-coins ?total_coins .
-                    
-                    Optional {{
+                    OPTIONAL {{
+                        ?x dc:description ?description .
+                    }}
+                    OPTIONAL {{
+                        ?x doacc:block-time ?block_time .
+                    }}
+                    OPTIONAL {{
+                        ?x doacc:date-founded ?date_founded .
+                    }}
+                    OPTIONAL {{
+                        ?x doacc:incept ?incept .
+                    }}
+                    OPTIONAL {{
+                        ?x doacc:protection-scheme ?protection_scheme .
+                    }}
+                    OPTIONAL {{
+                        ?x doacc:source ?source .
+                    }}
+                    OPTIONAL {{
+                        ?x doacc:protocol ?protocol .
+                    }}
+                    OPTIONAL {{
+                        ?x doacc:symbol ?symbol .
+                    }}
+                    OPTIONAL{{
+                        ?x doacc:total-coins ?total_coins .
+                    }}
+                    OPTIONAL {{
                         ?x doacc:website ?website .
                     }}
                     OPTIONAL{{
@@ -170,33 +216,13 @@ def get_cryptocurrencies_details_from_ontology(coins):
                     OPTIONAL{{
                         ?x doacc:premine ?premine .
                     }} .
-                    FILTER regex(?name, "^{build_query_parameter(coins)}$", "i")
+                    FILTER regex(?name, "^{build_query_parameter(coin_names)}$", "i")
+                    FILTER regex(?symbol, "^{build_query_parameter(symbols)}$", "i")
 
                 }}
         """
     )
-    cryptocurrencies = []
-    for cryptocurrency in result:
-        cryptocurrencies.append(Cryptocurrency(name=cryptocurrency[0].toPython(),
-                                               description=cryptocurrency[1].toPython(),
-                                               block_time=cryptocurrency[2].toPython(),
-                                               date_founded=cryptocurrency[3].toPython(),
-                                               incept=cryptocurrency[4].toPython(),
-                                               protection_scheme=cryptocurrency[5].toPython(),
-                                               source=cryptocurrency[6].toPython(),
-                                               protocol=cryptocurrency[7].toPython(),
-                                               symbol=cryptocurrency[8].toPython(),
-                                               total_coins=cryptocurrency[9].toPython(),
-                                               website=cryptocurrency[10].toPython()
-                                               if cryptocurrency[10] is not None else "",
-                                               proof_of_stake=cryptocurrency[11].toPython()
-                                               if cryptocurrency[11] is not None else "",
-                                               proof_of_work=cryptocurrency[12].toPython()
-                                               if cryptocurrency[12] is not None else "",
-                                               premine=cryptocurrency[13].toPython()
-                                               if cryptocurrency[13] is not None else "",
-                                               ))
-    return cryptocurrencies
+    return json.loads(result.serialize(format='json'))
 
 
 def perform_query_on_ontology(query):
@@ -209,11 +235,11 @@ def perform_query_on_ontology(query):
     return 1
 
 
-def build_query_parameter(coins):
+def build_query_parameter(parameters):
     query = ''
-    coins = set(coins)
-    for coin in coins:
-        query += coin + '$|'
+    parameters = set(parameters)
+    for parameter in parameters:
+        query += parameter + '$|'
     return query[:-1]
 
 
@@ -259,3 +285,23 @@ def term_to_json(term):
         return None
     else:
         raise ResultException("Unknown term type: %s (%s)" % (term, type(term)))
+
+
+def get_cryptocurrencies_from_jsonld(coin_names):
+    coin_names = [coin.lower() for coin in coin_names]
+    filtered_coins = [coin for coin in coins if coin['name'].lower() in coin_names]
+    symbols = [coin["symbol"].lower() for coin in filtered_coins]
+    f = open('utils/cryptocurrency.jsonld', encoding='utf-8')
+    data = json.load(f)
+    result = [x for x in data if
+              'http://www.w3.org/2004/02/skos/core#prefLabel' in x
+              and x['http://www.w3.org/2004/02/skos/core#prefLabel'][0]['@value'].lower() in coin_names
+              and 'http://purl.org/net/bel-epa/doacc#symbol' in x
+              and x['http://purl.org/net/bel-epa/doacc#symbol'][0]['@value'].lower() in symbols]
+    return result
+
+
+def get_all_cryptocurrencies_from_jsonld():
+    f = open('utils/cryptocurrency.jsonld', encoding='utf-8')
+    data = json.load(f)
+    return data
