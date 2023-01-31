@@ -34,6 +34,13 @@ def get_user_portfolio(user_id):
     return -1 if portfolio is None else portfolio
 
 
+def delete_user_portfolio(portfolio: Portfolio):
+    portfolios = get_portfolio_collection()
+    portfolio = portfolios.delete_one({"user_id": portfolio.user_id})
+    if portfolio:
+        return True
+    return False
+
 # </editor-fold>
 
 # <editor-fold desc="Users">
@@ -96,5 +103,14 @@ def insert_user_profile(profile: Profile):
     if user_portfolio:
         profiles.delete_one({"user_id": profile.user_id})
     profiles.insert_one(json.loads(profile.__str__()))
+
+
+def delete_user_profile(profile: Profile):
+    profiles = get_profile_collection()
+    user_portfolio = profiles.delete_one({"user_id": profile.user_id})
+    if user_portfolio:
+        return True
+    return False
+
 
 # </editor-fold>
