@@ -70,6 +70,8 @@ def get_all_cryptocurrencies_from_jsonld(rformat):
         abort(400)
     if rformat == 'json-ld':
         return jsonify(ontology.get_all_cryptocurrencies_from_jsonld())
+    if rformat == 'html-rdfa':
+        return ontology.get_all_cryptocurrencies_from_jsonld_as_html_rdfa()
 
 
 @app.route('/ontology/api/<string:rformat>/getCryptocurrenciesByName', methods=['POST'])
@@ -80,6 +82,8 @@ def get_cryptocurrencies_by_name_from_jsonld(rformat):
         abort(400)
     if rformat == 'json-ld':
         return jsonify(ontology.get_cryptocurrencies_from_jsonld(request.json['coins']))
+    if rformat == 'html-rdfa':
+        return ontology.get_cryptocurrencies_from_jsonld_as_html_rdfa(request.json['coins'])
 
 
 if __name__ == '__main__':

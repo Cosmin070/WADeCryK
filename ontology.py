@@ -5,6 +5,8 @@ from rdflib import Graph
 from rdflib import URIRef, Literal, BNode
 from rdflib.query import ResultException
 
+from constants.ontology_constants import LABEL, SYMBOL, PREMINE, POW, POS, WEBSITE, TOTAL_COINS, PROTOCOL, \
+    PROTECTION_SCHEME, INCEPT, DATE_FOUNDED, BLOCK_TIME, DESCRIPTION, SOURCE
 from models.Cryptocurrency import Cryptocurrency
 from utils.compute_useful_coins import coins
 
@@ -324,10 +326,10 @@ def get_cryptocurrencies_from_jsonld(coin_names):
     f = open('utils/cryptocurrency.jsonld', encoding='utf-8')
     data = json.load(f)
     result = [x for x in data if
-              'http://www.w3.org/2004/02/skos/core#prefLabel' in x
-              and x['http://www.w3.org/2004/02/skos/core#prefLabel'][0]['@value'].lower() in coin_names
-              and 'http://purl.org/net/bel-epa/doacc#symbol' in x
-              and x['http://purl.org/net/bel-epa/doacc#symbol'][0]['@value'].lower() in symbols]
+              LABEL in x
+              and x[LABEL][0]['@value'].lower() in coin_names
+              and SYMBOL in x
+              and x[SYMBOL][0]['@value'].lower() in symbols]
     return result
 
 
@@ -335,3 +337,73 @@ def get_all_cryptocurrencies_from_jsonld():
     f = open('utils/cryptocurrency.jsonld', encoding='utf-8')
     data = json.load(f)
     return data
+
+
+def get_cryptocurrencies_from_jsonld_as_html_rdfa(coin_names):
+    return generate_html_rdfa(get_cryptocurrencies_from_jsonld(coin_names))
+
+
+def get_all_cryptocurrencies_from_jsonld_as_html_rdfa():
+    return generate_html_rdfa(get_all_cryptocurrencies_from_jsonld())
+
+
+def generate_html_rdfa(result):
+    html_rdfa_response = """
+            <div    xmlns:ps="http://www.w3.org/2004/02/skos/core#"
+                    xmlns:doacc="http://purl.org/net/bel-epa/doacc#">
+        """
+    for coin in result:
+        if LABEL in coin:
+            html_rdfa_response += f'<span property="skos:prefLabel"><b>{coin[LABEL][0]["@value"]}</b></span><br>'
+        if DESCRIPTION in coin:
+            html_rdfa_response += f'&emsp;<span property="doacc:description">Description: {coin[DESCRIPTION][0]["@value"]}</span><br>'
+        if BLOCK_TIME in coin:
+            html_rdfa_response += f'&emsp;<span property="doacc:block-time">Block time: {coin[BLOCK_TIME][0]["@value"]}</span><br>'
+        if DATE_FOUNDED in coin:
+            html_rdfa_response += f'&emsp;<span property="doacc:date-founded">Date founded: {coin[DATE_FOUNDED][0]["@value"]}</span><br>'
+        if INCEPT in coin:
+            html_rdfa_response += f'&emsp;<span property="doacc:incept">Incept: {coin[INCEPT][0]["@value"]}</span><br>'
+        if PROTECTION_SCHEME in coin:
+            if "http" in coin[PROTECTION_SCHEME][0]["@id"]:
+                html_rdfa_response += f'&emsp;Protection scheme: <a property="doacc:protection-scheme" href="{coin[PROTECTION_SCHEME][0]["@id"]}">{coin[PROTECTION_SCHEME][0]["@id"]}</a><br>'
+            else:
+                html_rdfa_response += f'&emsp;<span property="doacc:protection-scheme">Protection scheme: {coin[PROTECTION_SCHEME][0]["@id"]}</span><br>'
+        if SOURCE in coin:
+            field = "@id" if "@id" in coin[SOURCE][0] else "@value"
+            if "http" in coin[SOURCE][0][field]:
+                html_rdfa_response += f'&emsp;Source: <a property="doacc:source" href="{coin[SOURCE][0][field]}">{coin[SOURCE][0][field]}</a><br>'
+            else:
+                html_rdfa_response += f'&emsp;<span property="doacc:source">Source: {coin[SOURCE][0][field]}</span><br>'
+        if PROTOCOL in coin:
+            field = "@id" if "@id" in coin[PROTOCOL][0] else "@value"
+            if "http" in coin[PROTOCOL][0][field]:
+                html_rdfa_response += f'&emsp;Protocol: <a property="doacc:protocol" href="{coin[PROTOCOL][0][field]}">{coin[PROTOCOL][0][field]}</a><br>'
+            else:
+                html_rdfa_response += f'&emsp;<span property="doacc:protocol">Protocol: {coin[PROTOCOL][0][field]}</span><br>'
+        if SYMBOL in coin:
+            html_rdfa_response += f'&emsp;<span property="doacc:symbol">Symbol: {coin[SYMBOL][0]["@value"]}</span><br>'
+        if TOTAL_COINS in coin:
+            html_rdfa_response += f'&emsp;<span property="doacc:total-coins">Total coins: {coin[TOTAL_COINS][0]["@value"]}</span><br>'
+        if WEBSITE in coin:
+            field = "@id" if "@id" in coin[WEBSITE][0] else "@value"
+            if "http" in coin[WEBSITE][0][field]:
+                html_rdfa_response += f'&emsp;Website: <a property="doacc:website" href="{coin[WEBSITE][0][field]}">{coin[WEBSITE][0][field]}</a><br>'
+            else:
+                html_rdfa_response += f'&emsp;<span property="doacc:website">Website: {coin[WEBSITE][0][field]}</span><br>'
+        if POS in coin:
+            if "http" in coin[POS][0]["@id"]:
+                html_rdfa_response += f'&emsp;POS: <a property="doacc:pos" href="{coin[POS][0]["@id"]}">{coin[POS][0]["@id"]}</a><br>'
+            else:
+                html_rdfa_response += f'&emsp;<span property="doacc:pos">POS: {coin[POS][0]["@id"]}</span><br>'
+        if POW in coin:
+            if "http" in coin[POW][0]["@id"]:
+                html_rdfa_response += f'&emsp;POW: <a property="doacc:pow" href="{coin[POW][0]["@id"]}">{coin[POW][0]["@id"]}</a><br>'
+            else:
+                html_rdfa_response += f'&emsp;<span property="doacc:pow">POW: {coin[POW][0]["@id"]}</span><br>'
+        if PREMINE in coin:
+            if "http" in coin[PREMINE][0]["@value"]:
+                html_rdfa_response += f'&emsp;Premine: <a property="doacc:premine" href="{coin[PREMINE][0]["@value"]}">{coin[PREMINE][0]["@value"]}</a><br>'
+            else:
+                html_rdfa_response += f'&emsp;<span property="doacc:premine">Premine: {coin[PREMINE][0]["@value"]}</span><br>'
+    html_rdfa_response += "</div>"
+    return html_rdfa_response
