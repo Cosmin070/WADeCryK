@@ -1,6 +1,7 @@
 import base64
 import uuid
 
+from model.model import compute_percentage
 from utils.hash_and_salt import get_hashed_password, check_password
 from authlib.integrations.flask_client import OAuth
 from flask import Flask, jsonify, request, session, Response, json, abort
@@ -310,6 +311,11 @@ def get_historical_prices_for_coin():
 
 
 # </editor-fold>
+
+
+@app.route('/cryk/api/getModelPredictions/<string:coin>')
+def get_coin_prediction(coin):
+    result = compute_percentage()
 
 
 def check_user_session():

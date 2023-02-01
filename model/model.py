@@ -3,6 +3,8 @@ import pandas as pd  # data processing, CSV file I/O (e.g. pd.read_csv)
 import tensorflow as tf
 from matplotlib import pyplot as plt
 
+from coin_thirdparty_tool import get_last_days_exchange
+
 HORIZON = 2
 WINDOW_SIZE = 3
 
@@ -126,8 +128,14 @@ def predict_for_model(model, values):
     return make_predictions(loaded, custom_window)
 
 
-def compute_percentage(values):
+def compute_percentage(coin):
+    results = get_last_days_exchange(coin, 5)
+    if results == -1 or results == -2:
+        return results
     percentage = []
+    values = []
+    for price in results['prices']:
+        values.append(price['usd'])
     result = predict_for_model('ETH-USD', values).numpy()
     percentage.append(result[0] / result[1] - 1)
     result = predict_for_model('DOGE-USD', values).numpy()
@@ -137,5 +145,4 @@ def compute_percentage(values):
     return sum(percentage) / len(percentage) * 1000
 
 
-values = [0.0541202, 0.064307, 0.075046, 0.082342, 0.096877]
-print(compute_percentage(values))
+print(compute_percentage('dogecoin'))
