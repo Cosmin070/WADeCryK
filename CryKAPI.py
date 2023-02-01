@@ -1,3 +1,7 @@
+import base64
+import uuid
+
+from utils.hash_and_salt import get_hashed_password, check_password
 from authlib.integrations.flask_client import OAuth
 from flask import Flask, jsonify, request, session, Response, json, abort
 from flask_cors import CORS
@@ -122,9 +126,13 @@ def login():
     if 'email' not in payload or 'password' not in payload:
         abort(400)
     email = payload['email']
-    password = payload['password']
-    user = User(email=email, password=password)
-    id = CryKDatabase.find_account(user)
+    password = payload['password'].encode('utf-8')
+    user = User(email=email)
+    hashed_password = CryKDatabase.find_user_hashed_password(user).encode('utf-8')
+    is_auth = check_password(password, hashed_password)
+    if not is_auth:
+        abort(401)
+    id = CryKDatabase.find_id_by_email(email)
     if id == -1:
         return abort(401)
     session['id'] = id
@@ -139,7 +147,7 @@ def register():
     if 'email' not in request.json or 'password' not in request.json:
         abort(400)
     email = request.json['email']
-    password = request.json['password']
+    password = get_hashed_password(request.json['password'].encode('utf-8')).decode('utf-8')
     new_user = User(email=email, password=password)
     CryKDatabase.insert_user(new_user)
     send_register_mail(new_user)

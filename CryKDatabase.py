@@ -75,6 +75,10 @@ def is_user_in_database(user_id):
     user = users.find_one({"_id": ObjectId(user_id)})
     return False if user is None else True
 
+def find_user_hashed_password(user: User):
+    users = get_users_collection()
+    user = users.find_one({"email": user.email})
+    return json.loads(json_util.dumps(user.get('password'))) if user is not None else -1
 
 # </editor-fold>
 
