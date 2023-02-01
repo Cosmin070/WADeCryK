@@ -14,27 +14,10 @@ CORS(app)
 
 @app.route('/ontology/api/cryptocurrencies')
 def get_all_cryptocurrencies():
-    all_coins = [coin['name'].lower() for coin in coins]
-    return jsonify(get_cryptocurrencies_details_from_ontology(all_coins))
-
-
-@app.route('/ontology/api/cryptocurrenciesByYears', methods=["POST"])
-def get_cryptocurrencies_by_year():
-    from_year, to_year = None, None
-    payload = request.json
-    if "period" in payload:
-        period = payload["period"]
-        from_year = period["from_year"]
-        if "to_year" in period:
-            to_year = period["to_year"]
-    print(from_year, to_year)
-    item = Cryptocurrency(date_founded=from_year)
-    item_list = [item]
-    return jsonify(item_list)
-
-
-@app.route('/ontology/api/<string:protocol>/cryptocurrencies')
-def get_cryptocurrencies_by_protocol(protocol):
+    protocol = request.args.get('protocol', None)
+    if protocol is None:
+        all_coins = [coin['name'].lower() for coin in coins]
+        return jsonify(get_cryptocurrencies_details_from_ontology(all_coins))
     if protocol not in ["pos", "pow"]:
         abort(400)
     if protocol == "pos":
@@ -42,8 +25,11 @@ def get_cryptocurrencies_by_protocol(protocol):
     return jsonify(get_cryptocurrencies_by_protocol_from_ontology("pow"))
 
 
-@app.route('/ontology/api/cryptocurrencyByName/<string:identifier>')
-def get_cryptocurrency_details(identifier):
+@app.route('/ontology/api/cryptocurrency')
+def get_cryptocurrency_details():
+    identifier = request.args.get('name', None)
+    if identifier is None:
+        abort(400)
     if identifier not in image_dict:
         abort(400)
     return jsonify(get_cryptocurrency_details_from_ontology(identifier))

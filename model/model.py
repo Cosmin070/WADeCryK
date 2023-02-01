@@ -1,3 +1,5 @@
+import os
+
 import numpy as np  # linear algebra
 import pandas as pd  # data processing, CSV file I/O (e.g. pd.read_csv)
 import tensorflow as tf
@@ -122,7 +124,8 @@ def train(coin):
 
 
 def predict_for_model(model, values):
-    loaded = tf.keras.models.load_model(model)
+    cwd = os.getcwd()
+    loaded = tf.keras.models.load_model(os.path.join(cwd, "model", model))
     custom = np.array(values)
     custom_window, custom_labels = make_windows(custom, window_size=WINDOW_SIZE, horizon=HORIZON)
     return make_predictions(loaded, custom_window)
@@ -143,6 +146,3 @@ def compute_percentage(coin):
     result = predict_for_model('BTC-USD', values).numpy()
     percentage.append(result[0] / result[1] - 1)
     return sum(percentage) / len(percentage) * 1000
-
-
-print(compute_percentage('dogecoin'))

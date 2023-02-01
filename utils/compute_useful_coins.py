@@ -673,7 +673,7 @@ coins = [
     },
     {
         'id': 'piratecoin',
-        'symbol': 'piratecoin☠',
+        'symbol': 'piratecoin',
         'name': 'PirateCoin'
     },
     {

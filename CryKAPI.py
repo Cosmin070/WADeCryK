@@ -1,8 +1,3 @@
-import base64
-import uuid
-
-from model.model import compute_percentage
-from utils.hash_and_salt import get_hashed_password, check_password
 from authlib.integrations.flask_client import OAuth
 from flask import Flask, jsonify, request, session, Response, json, abort
 from flask_cors import CORS
@@ -15,10 +10,12 @@ from coin_thirdparty_tool import get_custom_rate_now, get_last_days_exchange
 from config import GOOGLE_CLIENT_ID
 from emailer import send_register_mail
 from images import get_image, image_dict, get_response_image
+from model.model import compute_percentage
 from models.Cryptocurrency import Cryptocurrency
 from models.Portfolio import Portfolio
 from models.Profile import Profile
 from models.users import User
+from utils.hash_and_salt import get_hashed_password, check_password
 
 app = Flask(__name__)
 CORS(app)
@@ -37,11 +34,13 @@ oauth.register(
 
 
 # <editor-fold desc="images routes">
-@app.route('/cryk/api/getImage/<string:name>')
-def get_cryptocurrency_image(name):
-    if (get_image(name)) == -1:
-        return Response(status=404)
-    return get_response_image(get_image(name))
+@app.route('/cryk/api/getImage')
+def get_cryptocurrency_image():
+    name = request.args.get('name', None)
+    if name is None or name not in image_dict:
+        abort(400)
+    result = get_image(name)
+    return Response(status=404) if result == -1 else get_response_image(get_image(name))
 
 
 @app.route('/cryk/api/getImages', methods=['POST'])
@@ -62,8 +61,6 @@ def get_crypto_image():
 
 @app.route('/cryk/api/cryptocurrencies/dictionary', methods=['GET'])
 def get_crypto_dictionary():
-    if not check_user_session():
-        abort(401)
     return jsonify(image_dict)
 
 
@@ -170,26 +167,36 @@ def insert_user_portfolio():
     return jsonify(200)
 
 
-@app.route('/cryk/api/getPortfolio/<string:user_id>')
-def get_user_portfolio(user_id):
+@app.route('/cryk/api/getPortfolio')
+def get_user_portfolio():
     if not check_user_session():
         abort(401)
+    user_id = request.args.get('user_id', None)
+    if user_id is None:
+        abort(400)
     portfolio = CryKDatabase.get_user_portfolio(user_id)
-    return jsonify(portfolio)
+    return abort(400) if portfolio == -1 else portfolio
 
 
-@app.route('/cryk/api/updatePortfolio/<string:user_id>', methods=['PUT'])
-def update_user_portfolio(user_id):
-    if 'coins' not in request.json \
+@app.route('/cryk/api/updatePortfolio', methods=['PUT'])
+def update_user_portfolio():
+    if not check_user_session():
+        abort(401)
+    if 'id' not in request.json and 'coins' not in request.json \
             or any([False if coin in image_dict else True for coin in request.json['coins']]):
         abort(400)
-    portfolio = Portfolio(user_id=user_id, coins=request.json['coins'])
+    portfolio = Portfolio(user_id=request.json['id'], coins=request.json['coins'])
     CryKDatabase.insert_user_portfolio(portfolio)
     return jsonify(portfolio)
 
 
-@app.route('/cryk/api/deletePortfolio/<string:user_id>', methods=['DELETE'])
-def delete_user_portfolio(user_id):
+@app.route('/cryk/api/deletePortfolio', methods=['DELETE'])
+def delete_user_portfolio():
+    if not check_user_session():
+        abort(401)
+    user_id = request.args.get('user_id', None)
+    if user_id is None:
+        abort(400)
     portfolio = Portfolio(user_id=user_id)
     deleted_portfolio = CryKDatabase.delete_user_portfolio(portfolio)
     return jsonify(200) if deleted_portfolio else jsonify(400)
@@ -198,10 +205,13 @@ def delete_user_portfolio(user_id):
 # </editor-fold>
 
 # <editor-fold desc="profile routes">
-@app.route('/cryk/api/getProfile/<string:user_id>')
-def get_user_profile(user_id):
+@app.route('/cryk/api/getProfile')
+def get_user_profile():
     if not check_user_session():
         abort(401)
+    user_id = request.args.get('user_id', None)
+    if user_id is None:
+        abort(400)
     return jsonify(CryKDatabase.get_user_profile(user_id))
 
 
@@ -230,12 +240,14 @@ def insert_user_profile():
     return jsonify(200)
 
 
-@app.route('/cryk/api/updateProfile/<string:user_id>', methods=['PUT'])
-def update_user_profile(user_id):
+@app.route('/cryk/api/updateProfile', methods=['PUT'])
+def update_user_profile():
+    if not check_user_session():
+        abort(401)
     if 'firstname' not in request.json or 'lastname' not in request.json \
             or 'email' not in request.json or 'id' not in request.json:
         abort(400)
-    profile = Profile(user_id=user_id,
+    profile = Profile(user_id=request.json['id'],
                       firstname=request.json['firstname'],
                       lastname=request.json['lastname'],
                       email=request.json['email'],
@@ -244,33 +256,26 @@ def update_user_profile(user_id):
                       address=request.json['address'] if 'address' in request.json else "",
                       about=request.json['about'] if 'about' in request.json else "",
                       )
-    if 'coins' in request.json and any([False if coin in image_dict else True for coin in request.json['coins']]):
-        abort(400)
-    portfolio = Portfolio(user_id=user_id,
+    if 'coins' in request.json:
+        if any([False if coin in image_dict else True for coin in request.json['coins']]):
+            abort(400)
+    portfolio = Portfolio(user_id=request.json['id'],
                           coins=request.json['coins'] if 'coins' in request.json else {})
-    CryKDatabase.insert_user_profile(profile)
     CryKDatabase.insert_user_portfolio(portfolio)
+    CryKDatabase.insert_user_profile(profile)
+
     return jsonify(200)
 
 
-@app.route('/cryk/api/deleteProfile/<string:user_id>', methods=['DELETE'])
-def delete_user_profile(user_id):
-    if 'firstname' not in request.json or 'lastname' not in request.json \
-            or 'email' not in request.json or 'id' not in request.json:
+@app.route('/cryk/api/deleteProfile', methods=['DELETE'])
+def delete_user_profile():
+    user_id = request.args.get('user_id', None)
+    if user_id is None:
         abort(400)
-    profile = Profile(user_id=user_id,
-                      firstname=request.json['firstname'],
-                      lastname=request.json['lastname'],
-                      email=request.json['email'],
-                      city=request.json['city'] if 'city' in request.json else "",
-                      country=request.json['country'] if 'country' in request.json else "",
-                      address=request.json['address'] if 'address' in request.json else "",
-                      about=request.json['about'] if 'about' in request.json else "",
-                      )
+    profile = Profile(user_id=user_id)
     if 'coins' in request.json and any([False if coin in image_dict else True for coin in request.json['coins']]):
         abort(400)
-    portfolio = Portfolio(user_id=user_id,
-                          coins=request.json['coins'] if 'coins' in request.json else {})
+    portfolio = Portfolio(user_id=user_id)
     deleted_profile = CryKDatabase.delete_user_profile(profile)
     deleted_portfolio = CryKDatabase.delete_user_portfolio(portfolio)
     if deleted_portfolio and deleted_profile:
@@ -282,10 +287,11 @@ def delete_user_profile(user_id):
 
 
 # <editor-fold desc="coins routes">
-@app.route('/cryk/api/getCurrentPriceForCoin/<string:coin>', methods=['GET'])
-def get_current_price_for_coin(coin: str):
-    # if not check_user_session():
-    #     abort(401)
+@app.route('/cryk/api/getCurrentPriceForCoin', methods=['GET'])
+def get_current_price_for_coin():
+    coin = request.args.get('coin', None)
+    if coin is None:
+        abort(400)
     result = get_custom_rate_now(coin)
     if result == -1:
         abort(400)
@@ -296,8 +302,8 @@ def get_current_price_for_coin(coin: str):
 
 @app.route('/cryk/api/getHistoricalPriceForCoin', methods=['GET'])
 def get_historical_prices_for_coin():
-    # if not check_user_session():
-    #     abort(401)
+    if not check_user_session():
+        abort(401)
     coin = request.args.get('coin', None)
     days = request.args.get('days', None)
     if coin is None or days is None or not days.isdigit() or int(days) > 5:
@@ -313,9 +319,17 @@ def get_historical_prices_for_coin():
 # </editor-fold>
 
 
-@app.route('/cryk/api/getModelPredictions/<string:coin>')
-def get_coin_prediction(coin):
-    result = compute_percentage()
+@app.route('/cryk/api/getModelPredictions')
+def get_coin_prediction():
+    coin = request.args.get('coin', None)
+    if coin is None:
+        abort(400)
+    result = compute_percentage(coin)
+    if result == -1:
+        abort(400)
+    if result == -2:
+        abort(404)
+    return jsonify({"confidence": result})
 
 
 def check_user_session():
@@ -325,7 +339,7 @@ def check_user_session():
         except MalformedError:
             return False
         return True
-    elif 'id' in session:
+    elif 'id' in request.headers:
         if not CryKDatabase.is_user_in_database(request.headers['id']):
             return False
         return True
