@@ -322,21 +322,31 @@ def term_to_json(term):
 def get_cryptocurrencies_from_jsonld(coin_names):
     coin_names = [coin.lower() for coin in coin_names]
     filtered_coins = [coin for coin in coins if coin['name'].lower() in coin_names]
+    labels = [coin['name'].lower() for coin in filtered_coins]
     symbols = [coin["symbol"].lower() for coin in filtered_coins]
     f = open('utils/cryptocurrency.jsonld', encoding='utf-8')
     data = json.load(f)
     result = [x for x in data if
               LABEL in x
-              and x[LABEL][0]['@value'].lower() in coin_names
+              and x[LABEL][0]['@value'].lower() in labels
               and SYMBOL in x
               and x[SYMBOL][0]['@value'].lower() in symbols]
     return result
 
 
 def get_all_cryptocurrencies_from_jsonld():
+    coin_names = [coin['name'].lower() for coin in coins]
+    filtered_coins = [coin for coin in coins if coin['name'].lower() in coin_names]
+    labels = [coin['name'].lower() for coin in filtered_coins]
+    symbols = [coin["symbol"].lower() for coin in filtered_coins]
     f = open('utils/cryptocurrency.jsonld', encoding='utf-8')
     data = json.load(f)
-    return data
+    result = [x for x in data if
+              LABEL in x
+              and x[LABEL][0]['@value'].lower() in labels
+              and SYMBOL in x
+              and x[SYMBOL][0]['@value'].lower() in symbols]
+    return result
 
 
 def get_cryptocurrencies_from_jsonld_as_html_rdfa(coin_names):

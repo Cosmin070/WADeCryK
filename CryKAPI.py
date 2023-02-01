@@ -278,7 +278,11 @@ def get_current_price_for_coin(coin: str):
     # if not check_user_session():
     #     abort(401)
     result = get_custom_rate_now(coin)
-    return jsonify(result) if result != -1 else abort(400)
+    if result == -1:
+        abort(400)
+    if result == -2:
+        abort(404)
+    return jsonify(result)
 
 
 @app.route('/cryk/api/getHistoricalPriceForCoin', methods=['GET'])
@@ -290,7 +294,11 @@ def get_historical_prices_for_coin():
     if coin is None or days is None or not days.isdigit() or int(days) > 5:
         abort(400)
     result = get_last_days_exchange(coin, int(days))
-    return jsonify(result) if result != -1 else abort(400)
+    if result == -1:
+        abort(400)
+    if result == -2:
+        abort(404)
+    return jsonify(result)
 
 
 # </editor-fold>
